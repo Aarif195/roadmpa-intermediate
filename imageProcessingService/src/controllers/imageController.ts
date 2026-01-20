@@ -127,6 +127,7 @@ export async function transformImage(req: Request, res: Response) {
     sendError(res, "Error transforming image");
   }
 }
+
 // getImage
 export async function getImage(req: Request, res: Response) {
   try {
@@ -156,5 +157,38 @@ export async function getImage(req: Request, res: Response) {
     });
   } catch (err) {
     sendError(res, "Error retrieving image");
+  }
+}
+
+// listImages
+export async function listImages(req: AuthRequest, res: Response) {
+  try {
+    // 1. Get query params and set defaults
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const imageCol = getImageCollection();
+    const query = { userId: req.user?._id };
+
+    // 2. Fetch images and total count in parallel
+    const [images, total] = await Promise.all([
+      imageCol.find(query).skip(skip).limit(limit).toArray(),
+      imageCol.countDocuments(query)
+    ]);
+
+    // 3. Return images and pagination metadata
+    res.status(200).json({
+      
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit)
+      },
+      images
+    });
+  } catch (err) {
+    sendError(res, "Error listing images");
   }
 }

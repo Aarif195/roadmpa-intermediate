@@ -4,9 +4,8 @@ import { authenticate } from "../middleware/authenticate";
 import {
   uploadImage,
   transformImage,
-  getImage,
+  getImage, listImages
 } from "../controllers/imageController";
-import { AuthRequest } from "../middleware/authenticate";
 
 // rate limit
 import rateLimit from "express-rate-limit";
@@ -24,11 +23,19 @@ const transformLimiter = rateLimit({
   },
 });
 
+
+// uploadImage
 router.post("/upload", authenticate, upload.single("image"), uploadImage);
 
+// transformImage
 router.post("/:id/transform", authenticate, transformLimiter, transformImage);
 
+// getImage
 router.get("/:id", authenticate, getImage);
+
+// listImages
+router.get("/", authenticate, listImages);
+
 
 export default router;
 
