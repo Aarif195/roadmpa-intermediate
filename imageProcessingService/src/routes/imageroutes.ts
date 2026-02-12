@@ -4,7 +4,7 @@ import { authenticate } from "../middleware/authenticate";
 import {
   uploadImage,
   transformImage,
-  getImage, listImages
+  getImage, listImages, deleteImage
 } from "../controllers/imageController";
 
 // rate limit
@@ -35,6 +35,9 @@ router.get("/:id", authenticate, getImage);
 
 // listImages
 router.get("/", authenticate, listImages);
+
+// deleteImage
+router.delete("/:id", authenticate, deleteImage);
 
 
 export default router;
