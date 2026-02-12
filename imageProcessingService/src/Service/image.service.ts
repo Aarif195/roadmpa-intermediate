@@ -4,55 +4,56 @@ import { ObjectId } from "mongodb";
 
 // uploadImage
 export class ImageService {
+  // Generate a signature for the frontend to upload directly
+  static getPresignedSettings() {
+    const timestamp = Math.round(new Date().getTime() / 1000);
+    const folder = "roadmap_images";
 
+    // Create the signature using your API Secret
+    const signature = cloudinary.utils.api_sign_request(
+      { timestamp, folder },
+      process.env.CLOUDINARY_API_SECRET!,
+    );
 
-// Generate a signature for the frontend to upload directly
-static getPresignedSettings() {
-  const timestamp = Math.round(new Date().getTime() / 1000);
-  const folder = "roadmap_images";
-  
-  // Create the signature using your API Secret
-  const signature = cloudinary.utils.api_sign_request(
-    { timestamp, folder },
-    process.env.CLOUDINARY_API_SECRET!
-  );
+    return {
+      signature,
+      timestamp,
+      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+      apiKey: process.env.CLOUDINARY_API_KEY,
+      folder,
+    };
+  }
 
-  return {
-    signature,
-    timestamp,
-    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-    apiKey: process.env.CLOUDINARY_API_KEY,
-    folder
-  };
-}
+  // Save the details of the image uploaded directly by the frontend
+  static async saveRecord(
+    userId: ObjectId,
+    details: {
+      publicId: string;
+      url: string;
+      originalName: string;
+      mimetype: string;
+      size: number;
+      format: string;
+    },
+  ) {
+    const imageCol = getImageCollection();
 
-// Save the details of the image uploaded directly by the frontend
-static async saveRecord(userId: ObjectId, details: {
-  publicId: string;
-  url: string;
-  originalName: string;
-  mimetype: string;
-  size: number;
-  format: string;
-}) {
-  const imageCol = getImageCollection();
-  
-  const newImage = {
-    userId,
-    ...details,
-    createdAt: new Date(),
-  };
+    const newImage = {
+      userId,
+      ...details,
+      createdAt: new Date(),
+    };
 
-  const dbResult = await imageCol.insertOne(newImage);
-  
-  return {
-    ...newImage,
-    _id: dbResult.insertedId.toString(),
-    userId: userId.toString(),
-  };
-}
+    const dbResult = await imageCol.insertOne(newImage);
 
-  // transformImage 
+    return {
+      ...newImage,
+      _id: dbResult.insertedId.toString(),
+      userId: userId.toString(),
+    };
+  }
+
+  // transformImage
   static async transform(id: string, transformations: any) {
     const imageCol = getImageCollection();
     const image = await imageCol.findOne({ _id: new ObjectId(id) });
@@ -142,8 +143,8 @@ static async saveRecord(userId: ObjectId, details: {
     };
   }
 
-// listImages
-static async list(userId: ObjectId, page: number, limit: number) {
+  // listImages
+  static async list(userId: ObjectId, page: number, limit: number) {
     const skip = (page - 1) * limit;
     const imageCol = getImageCollection();
     const query = { userId };
@@ -151,7 +152,7 @@ static async list(userId: ObjectId, page: number, limit: number) {
     // 2. Fetch images and total count in parallel
     const [images, total] = await Promise.all([
       imageCol.find(query).skip(skip).limit(limit).toArray(),
-      imageCol.countDocuments(query)
+      imageCol.countDocuments(query),
     ]);
 
     return {
@@ -159,13 +160,14 @@ static async list(userId: ObjectId, page: number, limit: number) {
         total,
         page,
         limit,
-        pages: Math.ceil(total / limit)
-      }, images
+        pages: Math.ceil(total / limit),
+      },
+      images,
     };
   }
 
-// deleteImage
-static async delete(id: string, userId: ObjectId) {
+  // deleteImage
+  static async delete(id: string, userId: ObjectId) {
     const imageCol = getImageCollection();
 
     // 1. Find the image and check ownership
@@ -185,5 +187,4 @@ static async delete(id: string, userId: ObjectId) {
 
     return { status: 204 };
   }
-
 }

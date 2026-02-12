@@ -37,24 +37,6 @@ export async function saveImageRecord(req: AuthRequest, res: Response) {
   }
 }
 
-// uploadImage
-// export async function uploadImage(req: AuthRequest, res: Response) {
-//   try {
-//     if (!req.user) return sendError(res, "Unauthorized");
-//     if (!req.file) return sendError(res, "No file uploaded");
-
-//     const image = await ImageService.uploadAndSave(req.file, req.user._id! );
-
-//     res.status(201).json({
-//       message: "Image uploaded successfully",
-//       image,
-//     });
-//   } catch (err) {
-//     console.error(err);
-//     sendError(res, "Server error during upload");
-//   }
-// }
-
 // transformImage
 export async function transformImage(req: Request, res: Response) {
   try {

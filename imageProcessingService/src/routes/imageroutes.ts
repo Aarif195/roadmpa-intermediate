@@ -2,7 +2,7 @@ import express from "express";
 import { upload } from "../config/cloudinary";
 import { authenticate } from "../middleware/authenticate";
 import {
-  getUploadSignature, // New
+  getUploadSignature,
   saveImageRecord,
   transformImage,
   getImage, listImages, deleteImage
@@ -23,9 +23,6 @@ const transformLimiter = rateLimit({
     message: "Too many transformation requests. Please wait 15 minutes.",
   },
 });
-
-// uploadImage
-// router.post("/upload", authenticate, upload.single("image"), uploadImage);
 
 router.get("/upload-signature", authenticate, getUploadSignature);
 
