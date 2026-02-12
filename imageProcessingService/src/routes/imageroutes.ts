@@ -2,7 +2,8 @@ import express from "express";
 import { upload } from "../config/cloudinary";
 import { authenticate } from "../middleware/authenticate";
 import {
-  uploadImage,
+  getUploadSignature, // New
+  saveImageRecord,
   transformImage,
   getImage, listImages, deleteImage
 } from "../controllers/imageController";
@@ -23,9 +24,13 @@ const transformLimiter = rateLimit({
   },
 });
 
-
 // uploadImage
-router.post("/upload", authenticate, upload.single("image"), uploadImage);
+// router.post("/upload", authenticate, upload.single("image"), uploadImage);
+
+router.get("/upload-signature", authenticate, getUploadSignature);
+
+// 2. Save the metadata after Frontend uploads to Cloudinary
+router.post("/save", authenticate, saveImageRecord);
 
 // transformImage
 router.post("/:id/transform", authenticate, transformLimiter, transformImage);

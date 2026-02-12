@@ -1,30 +1,59 @@
 import { Request, Response } from "express";
-import jwt from "jsonwebtoken";
-import { getImageCollection, sendError } from "../utils/helpers";
+import {  sendError } from "../utils/helpers";
 import { User } from "../types/users";
-import { ObjectId } from "mongodb";
 
-import cloudinary from "../config/cloudinary";
 import { AuthRequest } from "../middleware/authenticate";
 import { ImageService } from "../Service/image.service";
 
-// uploadImage
-export async function uploadImage(req: AuthRequest, res: Response) {
+
+// getUploadSignature
+export async function getUploadSignature(req: AuthRequest, res: Response) {
   try {
     if (!req.user) return sendError(res, "Unauthorized");
-    if (!req.file) return sendError(res, "No file uploaded");
 
-    const image = await ImageService.uploadAndSave(req.file, req.user._id! );
+    const settings = ImageService.getPresignedSettings();
+
+    res.status(200).json(settings);
+  } catch (err) {
+    sendError(res, "Error generating upload signature");
+  }
+}
+
+// saveImageRecord
+export async function saveImageRecord(req: AuthRequest, res: Response) {
+  try {
+    if (!req.user) return sendError(res, "Unauthorized");
+
+    // The frontend sends these details in the request body
+    const image = await ImageService.saveRecord(req.user._id!, req.body);
 
     res.status(201).json({
-      message: "Image uploaded successfully",
+      message: "Image record saved successfully",
       image,
     });
   } catch (err) {
     console.error(err);
-    sendError(res, "Server error during upload");
+    sendError(res, "Error saving image record");
   }
 }
+
+// uploadImage
+// export async function uploadImage(req: AuthRequest, res: Response) {
+//   try {
+//     if (!req.user) return sendError(res, "Unauthorized");
+//     if (!req.file) return sendError(res, "No file uploaded");
+
+//     const image = await ImageService.uploadAndSave(req.file, req.user._id! );
+
+//     res.status(201).json({
+//       message: "Image uploaded successfully",
+//       image,
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     sendError(res, "Server error during upload");
+//   }
+// }
 
 // transformImage
 export async function transformImage(req: Request, res: Response) {

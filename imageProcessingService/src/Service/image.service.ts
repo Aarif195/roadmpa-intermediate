@@ -4,42 +4,55 @@ import { ObjectId } from "mongodb";
 
 // uploadImage
 export class ImageService {
-  static async uploadAndSave(file: Express.Multer.File, userId: ObjectId) {
-    return new Promise((resolve, reject) => {
-      // Upload to Cloudinary using a buffer stream
-      const uploadStream = cloudinary.uploader.upload_stream(
-        { folder: "roadmap_images" },
-        async (error, result) => {
-          if (error || !result)
-            return reject(new Error("Cloudinary upload failed"));
 
-          // Save metadata to MongoDB
-          const imageCol = getImageCollection();
-          const newImage = {
-            userId,
-            publicId: result.public_id,
-            url: result.secure_url,
-            originalName: file.originalname,
-            mimetype: file.mimetype,
-            size: file.size,
-            format: result.format,
-            createdAt: new Date(),
-          };
 
-          const dbResult = await imageCol.insertOne(newImage);
-          resolve({
-            ...newImage,
-            _id: dbResult.insertedId.toString(),
-            userId: userId.toString(),
-          });
-        },
-      );
+// Generate a signature for the frontend to upload directly
+static getPresignedSettings() {
+  const timestamp = Math.round(new Date().getTime() / 1000);
+  const folder = "roadmap_images";
+  
+  // Create the signature using your API Secret
+  const signature = cloudinary.utils.api_sign_request(
+    { timestamp, folder },
+    process.env.CLOUDINARY_API_SECRET!
+  );
 
-      uploadStream.end(file.buffer);
-    });
-  }
+  return {
+    signature,
+    timestamp,
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    apiKey: process.env.CLOUDINARY_API_KEY,
+    folder
+  };
+}
 
-  // transformImage
+// Save the details of the image uploaded directly by the frontend
+static async saveRecord(userId: ObjectId, details: {
+  publicId: string;
+  url: string;
+  originalName: string;
+  mimetype: string;
+  size: number;
+  format: string;
+}) {
+  const imageCol = getImageCollection();
+  
+  const newImage = {
+    userId,
+    ...details,
+    createdAt: new Date(),
+  };
+
+  const dbResult = await imageCol.insertOne(newImage);
+  
+  return {
+    ...newImage,
+    _id: dbResult.insertedId.toString(),
+    userId: userId.toString(),
+  };
+}
+
+  // transformImage 
   static async transform(id: string, transformations: any) {
     const imageCol = getImageCollection();
     const image = await imageCol.findOne({ _id: new ObjectId(id) });
